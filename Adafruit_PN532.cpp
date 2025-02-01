@@ -65,28 +65,6 @@ byte pn532response_firmwarevers[] = {
     0x00, 0x00, 0xFF,
     0x06, 0xFA, 0xD5}; ///< Expected firmware version message from PN532
 
-// Uncomment these lines to enable debug output for PN532(SPI) and/or MIFARE
-// related code
-
-#define PN532DEBUG
-// #define MIFAREDEBUG
-
-// If using Native Port on Arduino Zero or Due define as SerialUSB
-#define PN532DEBUGPRINT Serial ///< Fixed name for debug Serial instance
-//#define PN532DEBUGPRINT SerialUSB ///< Fixed name for debug Serial instance
-
-#ifdef PN532DEBUG
-#define DMSG(args...) PN532DEBUGPRINT.print(args)
-#define DMSG_STR(str) PN532DEBUGPRINT.println(str)
-#define DMSG_HEX(num)                                 \
-    PN532DEBUGPRINT.print(' ');                    \
-    PN532DEBUGPRINT.print((num >> 4) & 0x0F, HEX); \
-    PN532DEBUGPRINT.print(num & 0x0F, HEX)
-#endif
-
-#define PN532_PACKBUFFSIZ 64                ///< Packet buffer size in bytes
-byte pn532_packetbuffer[PN532_PACKBUFFSIZ]; ///< Packet buffer used in various
-                                            ///< transactions
 
 /**************************************************************************/
 /*!
@@ -133,6 +111,11 @@ Adafruit_PN532::Adafruit_PN532(uint8_t ss, SPIClass *theSPI) {
   _cs = ss;
   spi_dev = new Adafruit_SPIDevice(ss, 1000000, SPI_BITORDER_LSBFIRST,
                                    SPI_MODE0, theSPI);
+  #ifdef PN532DEBUG
+    debugMode = true;
+  #else
+    debugMode = false;
+  #endif
 }
 
 /**************************************************************************/
@@ -287,6 +270,10 @@ uint32_t Adafruit_PN532::getFirmwareVersion(void) {
   uint32_t response;
 
   pn532_packetbuffer[0] = PN532_COMMAND_GETFIRMWAREVERSION;
+
+  #ifdef PN532DEBUG
+    DMSG_STR("[DEBUG] Sending getFirmwareVersion");
+  #endif
 
   if (!sendCommandCheckAck(pn532_packetbuffer, 1)) {
     return 0;
@@ -511,6 +498,10 @@ bool Adafruit_PN532::SAMConfig(void) {
   pn532_packetbuffer[2] = 0x14; // timeout 50ms * 20 = 1 second
   pn532_packetbuffer[3] = 0x01; // use IRQ pin!
 
+  #ifdef PN532DEBUG
+    DMSG_STR("[DEBUG] Sending SAMConfiguration");
+  #endif
+
   if (!sendCommandCheckAck(pn532_packetbuffer, 4))
     return false;
 
@@ -680,7 +671,7 @@ bool Adafruit_PN532::readDetectedPassiveTargetID(uint8_t *uid,
 bool Adafruit_PN532::inDataExchange(uint8_t *send, uint8_t sendLength,
                                     uint8_t *response,
                                     uint8_t *responseLength) {
-  if (sendLength > PN532_PACKBUFFSIZ - 2) {
+  if (sendLength > PN532_PACKBUFFSIZE - 2) {
 #ifdef PN532DEBUG
     PN532DEBUGPRINT.println(F("[DEBUG] APDU length too long for packet buffer"));
 #endif

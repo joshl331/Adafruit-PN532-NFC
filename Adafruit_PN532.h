@@ -136,6 +136,27 @@
 #define PN532_GPIO_P34 (4)              ///< GPIO 34
 #define PN532_GPIO_P35 (5)              ///< GPIO 35
 
+#define PN532_PACKBUFFSIZE 64                ///< Packet buffer size in bytes
+
+// Uncomment these lines to enable debug output for PN532(SPI) and/or MIFARE
+// related code
+
+#define PN532DEBUG
+// #define MIFAREDEBUG
+
+// If using Native Port on Arduino Zero or Due define as SerialUSB
+#define PN532DEBUGPRINT Serial ///< Fixed name for debug Serial instance
+//#define PN532DEBUGPRINT SerialUSB ///< Fixed name for debug Serial instance
+
+#ifdef PN532DEBUG
+#define DMSG(args...) PN532DEBUGPRINT.print(args)
+#define DMSG_STR(str) PN532DEBUGPRINT.println(str)
+#define DMSG_HEX(num)                                 \
+    PN532DEBUGPRINT.print(' ');                    \
+    PN532DEBUGPRINT.print((num >> 4) & 0x0F, HEX); \
+    PN532DEBUGPRINT.print(num & 0x0F, HEX)
+#endif
+
 /**
  * @brief Class for working with Adafruit PN532 NFC/RFID breakout boards.
  */
@@ -206,6 +227,7 @@ protected:
   int8_t _uidLen;      // uid len
   int8_t _key[6];      // Mifare Classic key
   int8_t _inListedTag; // Tg number of inlisted tag.
+  bool debugMode;
 
   // Low level communication functions that handle both SPI and I2C.
   void readdata(uint8_t *buff, uint8_t n);
@@ -217,6 +239,8 @@ protected:
   Adafruit_SPIDevice *spi_dev = NULL;
   Adafruit_I2CDevice *i2c_dev = NULL;
   HardwareSerial *ser_dev = NULL;
+  byte pn532_packetbuffer[PN532_PACKBUFFSIZE]; ///< Packet buffer used in various
+                                             ///< transactions
 };
 
 #endif
