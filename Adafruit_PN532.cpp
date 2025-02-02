@@ -315,15 +315,16 @@ uint32_t Adafruit_PN532::getFirmwareVersion(void) {
               ACK was recieved
 */
 /**************************************************************************/
-// default timeout of one second
+// default timeout of 100 milli second
 bool Adafruit_PN532::sendCommandCheckAck(uint8_t *cmd, uint8_t cmdlen,
                                          uint16_t timeout) {
 
   // I2C works without using IRQ pin by polling for RDY byte
   // seems to work best with some delays between transactions
-  uint8_t SLOWDOWN = 0;
+  uint8_t SLOWDOWN = 1;
   if (i2c_dev)
     SLOWDOWN = 1;
+
 
   // write the command
   writecommand(cmd, cmdlen);
@@ -1599,9 +1600,9 @@ bool Adafruit_PN532::waitready(uint16_t timeout) {
     if (timeout != 0) {
       timer += 10;
       if (timer > timeout) {
-#ifdef PN532DEBUG
-        PN532DEBUGPRINT.println("TIMEOUT!");
-#endif
+        #ifdef PN532DEBUG
+        DMSG_STR("[DEBUG] Timed out while waiting for the PN532 to respond.");
+        #endif
         return false;
       }
     }
